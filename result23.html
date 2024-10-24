@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Roll No Lookup  | Rajalakshmi Engineering College</title>
+    <link rel="icon" href="rec.jpg" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #800080b8;
+            background: -webkit-linear-gradient(to left, #6404f5db, #800080b8);
+            background: linear-gradient(to left, #6404f5db, #800080b8);
+        }
+        .container {
+            max-width: 800px;
+        }
+        /* CSS for handling long cell content */
+        table.table td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+        table.table td:hover {
+            overflow: visible;
+            white-space: normal;
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-4 pt-3">
+        <h1 class="text-center mb-4 text-light">
+            <b>Rajalakshmi Engineering College</b>
+        </h1>
+        <h2 class="text-center mb-4 text-light">
+            Roll No Lookup Batch 2023
+        </h2>
+        <h3 class="text-warning mb-4">
+            <b>
+                <marquee behavior="scroll" direction="left">Department of Robotics and Automation Welcomes You!!</marquee>
+            </b>
+        </h3>
+
+        <!-- Roll No Search Section -->
+        <div class="card shadow p-4 mb-4">
+            <h3 class="text-center">Enter Roll No and Select Sheet</h3>
+            <div class="mb-3">
+                <label for="rollNoInput" class="form-label">Enter Roll No(e.g:231601001):</label>
+                <input type="text" id="rollNoInput" class="form-control" placeholder="Enter Roll No">
+            </div>
+            <div class="mb-3">
+                <label for="sheetSelect" class="form-label">Select Semester:</label>
+                <select id="sheetSelect" class="form-select">
+                    <option value="Semester 1">Semester 1</option>
+                    <option value="Semester 2">Semester 2</option>
+                </select>
+            </div>
+            <button id="searchBtn" class="btn btn-primary w-100">Search</button>
+        </div>
+
+        <!-- Display Data Section -->
+        <div id="resultSection" class="card shadow p-4 mb-4" style="display:none;">
+            <h3 class="text-center">Roll No Details</h3>
+            <table class="table table-striped table-bordered">
+                <tbody id="transposedTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyAvoZisyY0a0xlyM4_JA1HOhWAWaoFQoe8';
+        const SPREADSHEET_ID = '17LjZt_CjRVjZiprHCOgRl0PNEgg43Gxxzk4So7BhTsU';
+
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            const rollNo = document.getElementById('rollNoInput').value.trim();
+            const sheetName = document.getElementById('sheetSelect').value;
+
+            if (!rollNo) {
+                alert('Please enter a Roll No.');
+                return;
+            }
+
+            fetchSheetData(sheetName, rollNo);
+        });
+
+        function fetchSheetData(sheetName, rollNo) {
+            const range = `${sheetName}!A1:Z100`;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        displayMessage('Failed to access Google Sheet. Please check the API Key, Spreadsheet ID, or Sheet Permissions.', 'danger');
+                        return;
+                    }
+                    
+                    if (data.values && data.values.length > 0) {
+                        displayMessage('Successfully fetched data from Google Sheet.', 'success');
+                        displayTransposedData(data.values, rollNo);
+                    } else {
+                        displayMessage('No data found in the sheet.', 'warning');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    displayMessage('Error accessing Google Sheet. Please try again.', 'danger');
+                });
+        }
+
+        function displayTransposedData(data, rollNo) {
+            const headerRow = data[0];
+            const matchingRow = data.find(row => row[0] === rollNo);
+
+            if (matchingRow) {
+                const transposedTableBody = document.getElementById('transposedTableBody');
+                transposedTableBody.innerHTML = '';
+
+                // Transpose the data for display
+                headerRow.forEach((header, index) => {
+                    const tr = document.createElement('tr');
+
+                    // Column Header
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    tr.appendChild(th);
+
+                    // Corresponding Data
+                    const td = document.createElement('td');
+                    td.textContent = matchingRow[index] || ''; // Show empty if no data
+                    td.title = matchingRow[index] || ''; // Add tooltip for full content
+                    tr.appendChild(td);
+
+                    transposedTableBody.appendChild(tr);
+                });
+
+                // Display the result section
+                document.getElementById('resultSection').style.display = 'block';
+            } else {
+                displayMessage('Roll No not found.', 'warning');
+                document.getElementById('resultSection').style.display = 'none';
+            }
+        }
+
+        function displayMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `alert alert-${type} mt-4`;
+            messageDiv.textContent = message;
+            document.querySelector('.container').prepend(messageDiv);
+
+            // Remove message after 5 seconds
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
